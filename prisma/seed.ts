@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { NagerDateSource } from "../lib/sources/nager.ts";
-import { saveHolidays, saveSchoolBreaks } from "../lib/persistence.ts";
+import { saveHolidays, saveSchoolBreaks, saveThemeParkEvents } from "../lib/persistence.ts";
 import { defaultUkHalfTerms } from "../lib/sources/openholidays.ts";
 
 const prisma = new PrismaClient();
@@ -28,6 +28,10 @@ async function main() {
     { id: "santa-tecla", name: "Santa Tecla", startDate: new Date(`${year}-09-15`), endDate: new Date(`${year}-09-24`), category: "FESTIVAL" as const, impact: 4, notes: "Ventana orientativa", source: "Manual · por confirmar" },
   ];
   for (const event of events) await prisma.manualEvent.upsert({ where: { id: event.id }, update: event, create: { ...event, confirmed: false } });
+  await saveThemeParkEvents({ source: "manual", fetchedAt: new Date().toISOString(), stale: false, records: [
+    { id: `portaventura-halloween-${year}`, name: "Halloween en PortAventura", startDate: `${year}-10-01`, endDate: `${year}-10-31`, category: "parque", impact: 4, confirmed: false, source: "Calendario recurrente · confirmar" },
+    { id: `portaventura-navidad-${year}`, name: "Navidad en PortAventura", startDate: `${year}-12-05`, endDate: `${year}-12-31`, category: "parque", impact: 4, confirmed: false, source: "Calendario recurrente · confirmar" },
+  ] });
 
   const nager = await new NagerDateSource().fetch({ start: "2026-01-01", end: "2027-12-31" });
   await saveHolidays(nager);

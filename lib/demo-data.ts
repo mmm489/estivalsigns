@@ -58,4 +58,4 @@ export const sourceStatuses = [
   { name: "Tiempo · Open-Meteo", updated: "Hoy, 04:37", state: "al día", tone: "ok" },
 ];
 
-export const demoDataset: CalendarDataset = { holidays: demoHolidays, schoolBreaks: demoSchoolBreaks, events: demoEvents, weather: demoWeather, compRates: demoCompRates };
+export const demoDataset: CalendarDataset = { holidays: demoHolidays, schoolBreaks: demoSchoolBreaks, events: demoEvents, weather: demoWeather, compRates: demoCompRates, competitorHotels: compHotels, activeMarkets: ["FR", "ES", "GB", "IE", "DE", "NL", "BE"] };

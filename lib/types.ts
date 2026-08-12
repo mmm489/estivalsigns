@@ -97,6 +97,8 @@ export interface CalendarDataset {
   events: EventSignal[];
   weather: WeatherSignal[];
   compRates: CompRate[];
+  competitorHotels: string[];
+  activeMarkets: string[];
 }
 
 export interface DataSourceAdapter<T> {

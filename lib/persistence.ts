@@ -17,6 +17,15 @@ export async function saveWeather(result: SourceResult<WeatherSignal>) {
   await prisma.$transaction(result.records.map((row) => prisma.weatherForecast.upsert({ where: { date: new Date(row.date) }, update: { temperatureMax: row.temperatureMax, precipitationChance: row.precipitationChance, weatherCode: row.weatherCode, fetchedAt: new Date(result.fetchedAt) }, create: { date: new Date(row.date), temperatureMax: row.temperatureMax, precipitationChance: row.precipitationChance, weatherCode: row.weatherCode, fetchedAt: new Date(result.fetchedAt) } })));
 }
 
+export async function saveThemeParkEvents(result: SourceResult<EventSignal>) {
+  const parkEvents = result.records.filter((row) => row.category === "parque");
+  for (const event of parkEvents) {
+    for (let date = event.startDate; date <= event.endDate; date = new Date(new Date(`${date}T12:00:00Z`).getTime() + 86_400_000).toISOString().slice(0, 10)) {
+      await prisma.themeParkDay.upsert({ where: { date: new Date(date) }, update: { status: "SPECIAL_EVENT", label: event.name, confirmed: event.confirmed, source: event.source }, create: { date: new Date(date), status: "SPECIAL_EVENT", label: event.name, confirmed: event.confirmed, source: event.source } });
+    }
+  }
+}
+
 export async function saveCompRates(rows: Omit<CompRate, "id">[]) {
   for (const row of rows) {
     const hotel = await prisma.competitorHotel.upsert({ where: { name: row.hotel }, update: {}, create: { name: row.hotel } });
@@ -33,13 +42,15 @@ const dateOnly = (date: Date) => date.toISOString().slice(0, 10);
 
 export async function loadCalendarDataset(start: string, end: string): Promise<CalendarDataset> {
   const from = new Date(start); const to = new Date(end);
-  const [holidays, schoolBreaks, externalEvents, manualEvents, weather, compRates] = await Promise.all([
+  const [holidays, schoolBreaks, externalEvents, manualEvents, weather, compRates, competitorHotels, markets] = await Promise.all([
     prisma.publicHoliday.findMany({ where: { date: { gte: from, lte: to } } }),
     prisma.schoolHoliday.findMany({ where: { startDate: { lte: to }, endDate: { gte: from } } }),
     prisma.externalEvent.findMany({ where: { startDate: { lte: to }, OR: [{ endDate: null }, { endDate: { gte: from } }] } }),
     prisma.manualEvent.findMany({ where: { startDate: { lte: to }, endDate: { gte: from } } }),
     prisma.weatherForecast.findMany({ where: { date: { gte: from, lte: to } } }),
     prisma.competitorRate.findMany({ where: { stayDate: { gte: from, lte: to } }, include: { competitorHotel: true } }),
+    prisma.competitorHotel.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    prisma.emitterMarket.findMany({ where: { active: true } }),
   ]);
   return {
     holidays: holidays.map((row) => ({ id: row.externalId, date: dateOnly(row.date), countryCode: row.countryCode, subdivisionCode: row.subdivisionCode ?? undefined, localName: row.localName, name: row.name, isNational: row.isNational, isBridge: row.isBridge, sourceUrl: row.sourceUrl })),
@@ -50,5 +61,12 @@ export async function loadCalendarDataset(start: string, end: string): Promise<C
     ],
     weather: weather.map((row) => ({ date: dateOnly(row.date), temperatureMax: row.temperatureMax, precipitationChance: row.precipitationChance, weatherCode: row.weatherCode })),
     compRates: compRates.map((row) => ({ id: row.id, hotel: row.competitorHotel.name, stayDate: dateOnly(row.stayDate), queriedAt: row.queriedAt.toISOString(), price: Number(row.price), mealPlan: row.mealPlan, notes: row.notes ?? undefined })),
+    competitorHotels: competitorHotels.map((row) => row.name),
+    activeMarkets: markets.map((row) => row.code),
   };
+}
+
+export async function loadScoreWeights() {
+  const rows = await prisma.scoreWeight.findMany();
+  return Object.fromEntries(rows.map((row) => [row.key, row.value])) as Partial<import("@/lib/types").ScoreWeights>;
 }

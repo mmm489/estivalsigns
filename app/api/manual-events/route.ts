@@ -18,3 +18,11 @@ export async function DELETE(request: NextRequest) {
   await prisma.manualEvent.delete({ where: { id } });
   return NextResponse.json({ deleted: true });
 }
+
+export async function PUT(request: NextRequest) {
+  if (!process.env.DATABASE_URL) return NextResponse.json({ error: "DATABASE_URL no configurada" }, { status: 503 });
+  const body = await request.json() as { id?: string; confirmed?: boolean; impact?: number; notes?: string };
+  if (!body.id) return NextResponse.json({ error: "Falta id" }, { status: 400 });
+  await prisma.manualEvent.update({ where: { id: body.id }, data: { confirmed: body.confirmed, impact: body.impact, notes: body.notes } });
+  return NextResponse.json({ updated: true });
+}
