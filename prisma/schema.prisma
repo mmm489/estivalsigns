@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum SourceKind {
+  NAGER
+  OPEN_HOLIDAYS
+  DATA_GOUV_FR
+  TICKETMASTER
+  OPEN_METEO
+  MANUAL
+  COMP_SET
+  AMADEUS_STUB
+  GOOGLE_TRENDS_STUB
+}
+
+enum EventCategory {
+  FESTIVAL
+  SPORT
+  CONGRESS
+  THEME_PARK
+  OTHER
+}
+
+enum ThemeParkStatus {
+  OPEN
+  CLOSED
+  SPECIAL_EVENT
+  TO_CONFIRM
+}
+
+enum MealPlan {
+  SA
+  AD
+  MP
+  TI
+}
+
+enum ImportOrigin {
+  CSV
+  API
+}
+
+model DataSourceState {
+  id             String     @id @default(cuid())
+  source         SourceKind @unique
+  lastSuccessAt  DateTime?
+  lastAttemptAt  DateTime?
+  status         String     @default("pending")
+  records        Int        @default(0)
+  errorMessage   String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model PublicHoliday {
+  id              String   @id @default(cuid())
+  externalId      String   @unique
+  date            DateTime @db.Date
+  countryCode     String   @db.VarChar(2)
+  subdivisionCode String?  @db.VarChar(12)
+  localName       String
+  name            String
+  isNational      Boolean  @default(true)
+  isBridge        Boolean  @default(false)
+  sourceUrl       String
+  fetchedAt       DateTime @default(now())
+
+  @@index([date, countryCode])
+}
+
+model SchoolHoliday {
+  id              String   @id @default(cuid())
+  externalId      String   @unique
+  countryCode     String   @db.VarChar(2)
+  subdivisionCode String?
+  zone             String?
+  name             String
+  startDate        DateTime @db.Date
+  endDate          DateTime @db.Date
+  source           SourceKind
+  sourceUrl        String?
+  confirmed        Boolean  @default(true)
+  notes            String?
+  fetchedAt        DateTime @default(now())
+
+  @@index([startDate, endDate, countryCode])
+}
+
+model ExternalEvent {
+  id             String   @id @default(cuid())
+  externalId     String   @unique
+  name           String
+  startDate      DateTime
+  endDate        DateTime?
+  venue          String?
+  city           String?
+  latitude       Float?
+  longitude      Float?
+  venueCapacity  Int?
+  impact         Int      @default(2)
+  sourceUrl      String?
+  fetchedAt      DateTime @default(now())
+
+  @@index([startDate])
+}
+
+model WeatherForecast {
+  id                   String   @id @default(cuid())
+  date                 DateTime @unique @db.Date
+  temperatureMax       Float
+  precipitationChance  Int
+  weatherCode          Int
+  fetchedAt            DateTime @default(now())
+}
+
+model ManualEvent {
+  id          String        @id @default(cuid())
+  name        String
+  startDate   DateTime      @db.Date
+  endDate     DateTime      @db.Date
+  category    EventCategory
+  impact      Int
+  notes       String?
+  source      String?
+  confirmed   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([startDate, endDate])
+}
+
+model ThemeParkDay {
+  id          String          @id @default(cuid())
+  date        DateTime        @unique @db.Date
+  status      ThemeParkStatus
+  label       String?
+  confirmed   Boolean         @default(false)
+  source      String?
+  updatedAt   DateTime        @updatedAt
+}
+
+model CompetitorHotel {
+  id        String           @id @default(cuid())
+  name      String           @unique
+  active    Boolean          @default(true)
+  rates     CompetitorRate[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model CompetitorRate {
+  id                String          @id @default(cuid())
+  competitorHotelId String
+  competitorHotel   CompetitorHotel @relation(fields: [competitorHotelId], references: [id], onDelete: Cascade)
+  stayDate          DateTime        @db.Date
+  queriedAt         DateTime
+  price             Decimal         @db.Decimal(10, 2)
+  mealPlan          MealPlan
+  notes             String?
+  source            String          @default("manual")
+  createdAt         DateTime        @default(now())
+
+  @@unique([competitorHotelId, stayDate, queriedAt, mealPlan])
+  @@index([stayDate, queriedAt])
+}
+
+model ScoreWeight {
+  key         String   @id
+  label       String
+  value       Int
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model SeasonalWeight {
+  month    Int      @id
+  value    Int
+  updatedAt DateTime @updatedAt
+}
+
+model EmitterMarket {
+  code      String   @id
+  label     String
+  active    Boolean  @default(true)
+  weight    Int      @default(5)
+  updatedAt DateTime @updatedAt
+}
+
+model FutureMarketSignal {
+  id          String     @id @default(cuid())
+  provider    SourceKind
+  date        DateTime   @db.Date
+  market      String?
+  airportCode String?
+  value       Float?
+  payload     Json?
+  fetchedAt   DateTime   @default(now())
+
+  @@index([provider, date])
+}
+
+// Módulo futuro: permanece vacío e inaccesible mientras ENABLE_PMS_MODULE=false.
+// No contiene ni admite datos personales de huéspedes.
+model PmsSnapshot {
+  id                  String   @id @default(cuid())
+  snapshotDate        DateTime @db.Date
+  stayDate            DateTime @db.Date
+  roomsSold           Int
+  roomsAvailable      Int
+  adr                  Decimal  @db.Decimal(10, 2)
+  revenue              Decimal  @db.Decimal(12, 2)
+  channel              String   @default("")
+  segment              String   @default("")
+  createdAt            DateTime @default(now())
+
+  @@unique([snapshotDate, stayDate, channel, segment])
+  @@index([stayDate, snapshotDate])
+}
+
+model PmsImportLog {
+  id          String       @id @default(cuid())
+  importedAt  DateTime     @default(now())
+  origin      ImportOrigin
+  rows        Int
+  user        String?
+  errors      Json?
+}
