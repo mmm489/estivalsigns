@@ -1,5 +1,5 @@
 import { addDays, iso } from "@/lib/date-utils";
-import type { CompRate, EventSignal, HolidaySignal, SchoolBreakSignal, WeatherSignal } from "@/lib/types";
+import type { CalendarDataset, CompRate, EventSignal, HolidaySignal, SchoolBreakSignal, WeatherSignal } from "@/lib/types";
 
 const today = new Date();
 const year = today.getFullYear();
@@ -57,3 +57,5 @@ export const sourceStatuses = [
   { name: "Eventos · Ticketmaster", updated: "Sin clave API", state: "pendiente", tone: "warn" },
   { name: "Tiempo · Open-Meteo", updated: "Hoy, 04:37", state: "al día", tone: "ok" },
 ];
+
+export const demoDataset: CalendarDataset = { holidays: demoHolidays, schoolBreaks: demoSchoolBreaks, events: demoEvents, weather: demoWeather, compRates: demoCompRates };

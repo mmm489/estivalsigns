@@ -91,6 +91,14 @@ export interface DayDemand {
   parkStatus?: "abierto" | "cerrado" | "especial" | "por confirmar";
 }
 
+export interface CalendarDataset {
+  holidays: HolidaySignal[];
+  schoolBreaks: SchoolBreakSignal[];
+  events: EventSignal[];
+  weather: WeatherSignal[];
+  compRates: CompRate[];
+}
+
 export interface DataSourceAdapter<T> {
   readonly id: SourceName;
   fetch(range: { start: string; end: string }): Promise<SourceResult<T>>;

@@ -2,21 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { addDays, formatDate, iso, monthGrid } from "@/lib/date-utils";
-import { demoCompRates, demoEvents, demoHolidays, demoSchoolBreaks, demoWeather, sourceStatuses } from "@/lib/demo-data";
+import { sourceStatuses } from "@/lib/demo-data";
 import { calculateDemandDay, demandColor, defaultWeights } from "@/lib/score";
-import type { DayDemand, EventSignal, ScoreWeights } from "@/lib/types";
+import type { CalendarDataset, DayDemand, EventSignal, ScoreWeights } from "@/lib/types";
 
 type View = "calendario" | "agenda" | "comparador" | "configuracion";
 const weekdays = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const flags: Record<string, string> = { ES: "🇪🇸", FR: "🇫🇷", GB: "🇬🇧", IE: "🇮🇪", DE: "🇩🇪", NL: "🇳🇱", BE: "🇧🇪" };
 
-const demandData = { holidays: demoHolidays, schoolBreaks: demoSchoolBreaks, events: demoEvents, weather: demoWeather, compRates: demoCompRates };
-
-function useCalendarData(year: number, month: number, weights: ScoreWeights) {
-  return useMemo(() => monthGrid(year, month).map((date) => calculateDemandDay(date, demandData, weights)), [year, month, weights]);
+function useCalendarData(year: number, month: number, weights: ScoreWeights, data: CalendarDataset) {
+  return useMemo(() => monthGrid(year, month).map((date) => calculateDemandDay(date, data, weights)), [year, month, weights, data]);
 }
 
-export function CalendarApp() {
+export function CalendarApp({ initialData, demoMode = false }: { initialData: CalendarDataset; demoMode?: boolean }) {
   const now = new Date();
   const [view, setView] = useState<View>("calendario");
   const [year, setYear] = useState(now.getFullYear());
@@ -24,10 +22,11 @@ export function CalendarApp() {
   const [selected, setSelected] = useState(iso(now));
   const [weights, setWeights] = useState(defaultWeights);
   const [filters, setFilters] = useState({ holidays: true, school: true, events: true, comp: true });
-  const [events, setEvents] = useState<EventSignal[]>(demoEvents);
+  const [events, setEvents] = useState<EventSignal[]>(initialData.events);
   const [toast, setToast] = useState("");
-  const days = useCalendarData(year, month, weights);
-  const selectedDay = days.find((day) => day.date === selected) ?? calculateDemandDay(selected, { ...demandData, events }, weights);
+  const demandData = useMemo(() => ({ ...initialData, events }), [initialData, events]);
+  const days = useCalendarData(year, month, weights, demandData);
+  const selectedDay = days.find((day) => day.date === selected) ?? calculateDemandDay(selected, demandData, weights);
 
   const moveMonth = (direction: number) => {
     const date = new Date(Date.UTC(year, month + direction, 1));
@@ -49,12 +48,12 @@ export function CalendarApp() {
       <div className="workspace">
         <section className="hero">
           <div><p className="eyebrow">La Pineda · Vila-seca · Tarragona</p><h1>El pulso externo<br />de cada fecha.</h1><p className="hero-copy">Festivos, vacaciones escolares, eventos, PortAventura, meteorología y comp set manual reunidos en una temperatura explicable de demanda.</p></div>
-          <div className="hero-note"><strong>Solo datos públicos y externos.</strong><br />Sin ocupación, ADR, reservas, PMS ni información de huéspedes. Las fechas orientativas aparecen siempre como “por confirmar”.</div>
+          <div className="hero-note"><strong>Solo datos públicos y externos.</strong><br />Sin ocupación, ADR, reservas, PMS ni información de huéspedes. Las fechas orientativas aparecen siempre como “por confirmar”.{demoMode && <><br /><strong>Modo demo:</strong> configura Neon y ejecuta el refresco para usar caché real.</>}</div>
         </section>
 
         {view === "calendario" && <CalendarView {...{ year, month, days, selected, setSelected, moveMonth, filters, setFilters, selectedDay }} />}
-        {view === "agenda" && <AgendaView weights={weights} notify={notify} />}
-        {view === "comparador" && <CompareView weights={weights} />}
+        {view === "agenda" && <AgendaView weights={weights} data={demandData} notify={notify} />}
+        {view === "comparador" && <CompareView weights={weights} data={demandData} />}
         {view === "configuracion" && <SettingsView weights={weights} setWeights={setWeights} events={events} setEvents={setEvents} notify={notify} />}
       </div>
       {toast && <div className="toast" role="status">{toast}</div>}
@@ -118,9 +117,9 @@ function DayPanel({ day }: { day: DayDemand }) {
   </aside>;
 }
 
-function AgendaView({ weights, notify }: { weights: ScoreWeights; notify: (message: string) => void }) {
+function AgendaView({ weights, data, notify }: { weights: ScoreWeights; data: CalendarDataset; notify: (message: string) => void }) {
   const today = iso(new Date());
-  const days = useMemo(() => Array.from({ length: 90 }, (_, index) => calculateDemandDay(addDays(today, index), demandData, weights)), [today, weights]);
+  const days = useMemo(() => Array.from({ length: 90 }, (_, index) => calculateDemandDay(addDays(today, index), data, weights)), [today, weights, data]);
   const exportCsv = () => {
     const csv = ["fecha,score,nivel,factores", ...days.map((day) => `${day.date},${day.score},${day.level},"${day.factors.map((factor) => factor.label).join(" · ")}"`)].join("\n");
     const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); link.download = "agenda-demanda-90-dias.csv"; link.click(); URL.revokeObjectURL(link.href); notify("Agenda exportada a CSV");
@@ -128,9 +127,9 @@ function AgendaView({ weights, notify }: { weights: ScoreWeights; notify: (messa
   return <section className="view-card"><div className="view-header"><div><p className="eyebrow">Próximos 90 días</p><h2>Agenda de señales</h2><p>Orden cronológico, score explicable y factores públicos activos.</p></div><button className="btn primary" onClick={exportCsv}>Exportar CSV</button></div><div className="agenda-wrap"><table className="agenda-list"><thead><tr><th>Fecha</th><th>Score</th><th>Temperatura</th><th>Factores principales</th><th>Comp set</th></tr></thead><tbody>{days.map((day) => <tr key={day.date}><td><strong>{formatDate(day.date, { weekday: "short", day: "2-digit", month: "short" })}</strong></td><td><span className={`agenda-score ${demandColor(day.score)}`}>{day.score}</span></td><td>{day.level}</td><td>{day.factors.slice(0, 3).map((factor) => factor.label).join(" · ")}</td><td>{day.compMedian ? `${Math.round(day.compMedian)} € ↗` : "—"}</td></tr>)}</tbody></table></div></section>;
 }
 
-function CompareView({ weights }: { weights: ScoreWeights }) {
+function CompareView({ weights, data }: { weights: ScoreWeights; data: CalendarDataset }) {
   const today = iso(new Date()); const [left, setLeft] = useState(addDays(today, 14)); const [right, setRight] = useState(addDays(today, 45));
-  const values = [calculateDemandDay(left, demandData, weights), calculateDemandDay(right, demandData, weights)];
+  const values = [calculateDemandDay(left, data, weights), calculateDemandDay(right, data, weights)];
   return <section className="view-card"><div className="view-header"><div><p className="eyebrow">Argumentario para dirección</p><h2>Comparador de fechas</h2><p>Contrasta dos días y explica la diferencia de presión externa.</p></div></div><div className="compare-grid">{values.map((day, index) => <div className="compare-card" key={index}><div className="field"><label>Fecha {index === 0 ? "A" : "B"}</label><input type="date" value={index === 0 ? left : right} onChange={(event) => index === 0 ? setLeft(event.target.value) : setRight(event.target.value)} /></div><h3>{formatDate(day.date, { weekday: "long", day: "numeric", month: "long" })}</h3><div className="thermometer"><div className="score-large">{day.score}</div><div><strong>{day.level}</strong><span>{day.factors.length} factores puntuables</span></div></div>{day.factors.map((factor) => <div className="factor" key={factor.label}><span>{factor.label}</span><b>+{factor.points}</b></div>)}<div className="callout" style={{ marginTop: 16 }}>{day.score >= values[1 - index].score ? "Mayor presión externa relativa: hay argumentos para proteger valor." : "Menor presión externa relativa: conviene vigilar la respuesta del mercado."}</div></div>)}</div></section>;
 }
 
