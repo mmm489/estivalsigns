@@ -42,3 +42,5 @@ yarn-error.log*
 /.codex-dev.log
 /.codex-dev.err.log
 *.tsbuildinfo
+
+.env*
