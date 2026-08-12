@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { accessCookieName, verifyAccessCookie } from "@/lib/auth";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   if (!process.env.ACCESS_PASSWORD || process.env.NODE_ENV !== "production") return NextResponse.next();
   if (request.nextUrl.pathname.startsWith("/api/cron/")) return NextResponse.next();
   if (request.nextUrl.pathname === "/acceso" || request.nextUrl.pathname === "/api/access") return NextResponse.next();

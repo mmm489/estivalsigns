@@ -28,12 +28,12 @@ consume ocupación, ADR, reservas, datos de huéspedes o información del PMS.
 ## Instalación local
 
 ```bash
-npm install
+pnpm install
 cp .env.example .env.local
-npx prisma generate
-npx prisma migrate dev
-npx prisma db seed
-npm run dev
+pnpm exec prisma generate
+pnpm exec prisma migrate dev
+pnpm exec prisma db seed
+pnpm dev
 ```
 
 Abre `http://localhost:3000`. En desarrollo, si `ACCESS_PASSWORD` está vacío,
@@ -108,8 +108,8 @@ huésped.
 ## Validación
 
 ```bash
-npm run test:unit
-npm test
-npm run lint
-npx tsc --noEmit
+pnpm run test:unit
+pnpm test
+pnpm run lint
+pnpm exec tsc --noEmit
 ```

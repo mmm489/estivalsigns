@@ -6,6 +6,7 @@ const display = Fraunces({ variable: "--font-display", subsets: ["latin"] });
 const body = Manrope({ variable: "--font-body", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: "Estival Signals · Calendario de demanda externa",
   description: "Señales públicas y externas para anticipar la demanda en La Pineda.",
   openGraph: { title: "Estival Signals", description: "Calendario de demanda externa", images: ["/og.png"] },
