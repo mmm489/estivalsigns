@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { addDays, formatDate, iso, monthGrid } from "@/lib/date-utils";
 import { sourceStatuses } from "@/lib/demo-data";
+import { datasetForScope, estivalPortfolio, portfolioStats, resolvePortfolioScope, weightsForScope, type PortfolioSelection, type ResolvedPortfolioScope } from "@/lib/portfolio";
 import { calculateDemandDay, demandColor, defaultWeights } from "@/lib/score";
 import type { CalendarDataset, DayDemand, EventSignal, ScoreWeights } from "@/lib/types";
 
@@ -23,10 +24,13 @@ export function CalendarApp({ initialData, initialWeights = defaultWeights, demo
   const [weights, setWeights] = useState(initialWeights);
   const [filters, setFilters] = useState({ holidays: true, school: true, events: true, comp: true });
   const [events, setEvents] = useState<EventSignal[]>(initialData.events);
+  const [portfolioSelection, setPortfolioSelection] = useState<PortfolioSelection>({ areaId: "", clusterId: "", propertyId: "", accommodation: "all" });
   const [toast, setToast] = useState("");
-  const demandData = useMemo(() => ({ ...initialData, events }), [initialData, events]);
-  const days = useCalendarData(year, month, weights, demandData);
-  const selectedDay = days.find((day) => day.date === selected) ?? calculateDemandDay(selected, demandData, weights);
+  const scope = useMemo(() => resolvePortfolioScope(portfolioSelection), [portfolioSelection]);
+  const demandData = useMemo(() => datasetForScope({ ...initialData, events }, scope.signalProfile), [initialData, events, scope.signalProfile]);
+  const scopedWeights = useMemo(() => weightsForScope(weights, scope.seasonality), [weights, scope.seasonality]);
+  const days = useCalendarData(year, month, scopedWeights, demandData);
+  const selectedDay = days.find((day) => day.date === selected) ?? calculateDemandDay(selected, demandData, scopedWeights);
 
   const moveMonth = (direction: number) => {
     const date = new Date(Date.UTC(year, month + direction, 1));
@@ -38,7 +42,7 @@ export function CalendarApp({ initialData, initialWeights = defaultWeights, demo
   return (
     <main className="app">
       <header className="topbar">
-        <div className="brand"><div className="brand-mark">E</div><div><strong>Estival Signals</strong><span>Demanda externa · Costa Daurada</span></div></div>
+        <div className="brand"><div className="brand-mark">E</div><div><strong>Estival Signals</strong><span>Cartera corporativa · {portfolioStats.properties} establecimientos</span></div></div>
         <nav className="nav-tabs" aria-label="Vistas principales">
           {(["calendario", "agenda", "comparador", "configuracion"] as View[]).map((item) => <button className={`nav-tab ${view === item ? "active" : ""}`} onClick={() => setView(item)} key={item}>{item === "configuracion" ? "Configuración" : item[0].toUpperCase() + item.slice(1)}</button>)}
         </nav>
@@ -46,19 +50,37 @@ export function CalendarApp({ initialData, initialWeights = defaultWeights, demo
       </header>
 
       <div className="workspace">
+        <PortfolioSelector selection={portfolioSelection} setSelection={setPortfolioSelection} scope={scope} />
         <section className="hero">
-          <div><p className="eyebrow">La Pineda · Vila-seca · Tarragona</p><h1>El pulso externo<br />de cada fecha.</h1><p className="hero-copy">Festivos, vacaciones escolares, eventos, PortAventura, meteorología y comp set manual reunidos en una temperatura explicable de demanda.</p></div>
-          <div className="hero-note"><strong>Solo datos públicos y externos.</strong><br />Sin ocupación, ADR, reservas, PMS ni información de huéspedes. Las fechas orientativas aparecen siempre como “por confirmar”.{demoMode && <><br /><strong>Modo demo:</strong> configura Neon y ejecuta el refresco para usar caché real.</>}</div>
+          <div><p className="eyebrow">{scope.path}</p><h1>{scope.title}<br />señales de demanda.</h1><p className="hero-copy">Festivos, vacaciones escolares y señales externas reunidos en una temperatura explicable para {scope.location}.{scope.signalProfile === "la-pineda" && " Incluye eventos, PortAventura, meteorología y comp set de La Pineda."}</p></div>
+          <div className="hero-note"><strong>Solo datos públicos y externos.</strong><br />Sin ocupación, ADR, reservas, PMS ni información de huéspedes.{scope.signalProfile !== "la-pineda" && <><br /><strong>Contexto preparado:</strong> faltan fuentes locales y comp set propios; nunca se reutilizan los de La Pineda.</>}{demoMode && <><br /><strong>Modo demo:</strong> configura Neon y ejecuta el refresco para usar caché real.</>}</div>
         </section>
 
         {view === "calendario" && <CalendarView {...{ year, month, days, selected, setSelected, moveMonth, filters, setFilters, selectedDay }} />}
-        {view === "agenda" && <AgendaView weights={weights} data={demandData} notify={notify} />}
-        {view === "comparador" && <CompareView weights={weights} data={demandData} />}
-        {view === "configuracion" && <SettingsView weights={weights} setWeights={setWeights} events={events} setEvents={setEvents} competitorHotels={initialData.competitorHotels} activeMarkets={initialData.activeMarkets} notify={notify} />}
+        {view === "agenda" && <AgendaView weights={scopedWeights} data={demandData} notify={notify} />}
+        {view === "comparador" && <CompareView weights={scopedWeights} data={demandData} />}
+        {view === "configuracion" && <SettingsView weights={weights} setWeights={setWeights} events={events} setEvents={setEvents} competitorHotels={demandData.competitorHotels} activeMarkets={initialData.activeMarkets} notify={notify} />}
       </div>
       {toast && <div className="toast" role="status">{toast}</div>}
     </main>
   );
+}
+
+function PortfolioSelector({ selection, setSelection, scope }: { selection: PortfolioSelection; setSelection: (selection: PortfolioSelection) => void; scope: ResolvedPortfolioScope }) {
+  const clusters = scope.area?.clusters ?? [];
+  const properties = scope.cluster?.properties ?? [];
+  const accommodations = scope.property?.accommodations ?? [];
+  const typeLabels = { hotel: "Hotel", apartments: "Apartamentos", camping: "Camping" } as const;
+  return <section className="portfolio-bar" aria-label="Ámbito de la cartera">
+    <div className="portfolio-heading"><span className="panel-kicker">Ámbito activo</span><strong>{scope.title}</strong><small>{scope.property ? typeLabels[scope.property.type] : scope.cluster ? "Complejo o localidad" : scope.area ? "Zona" : "Vista corporativa"} · {scope.location}</small></div>
+    <div className="portfolio-selectors">
+      <label><span>Zona</span><select aria-label="Zona o destino" value={selection.areaId} onChange={(event) => setSelection({ areaId: event.target.value, clusterId: "", propertyId: "", accommodation: "all" })}><option value="">Todo Estival Group</option>{estivalPortfolio.map((area) => <option value={area.id} key={area.id}>{area.name}</option>)}</select></label>
+      <label><span>Complejo / localidad</span><select aria-label="Complejo o localidad" value={selection.clusterId} disabled={!scope.area} onChange={(event) => setSelection({ ...selection, clusterId: event.target.value, propertyId: "", accommodation: "all" })}><option value="">Toda la zona</option>{clusters.map((cluster) => <option value={cluster.id} key={cluster.id}>{cluster.name}</option>)}</select></label>
+      <label><span>Establecimiento</span><select aria-label="Establecimiento" value={selection.propertyId} disabled={!scope.cluster} onChange={(event) => setSelection({ ...selection, propertyId: event.target.value, accommodation: "all" })}><option value="">Todos los establecimientos</option>{properties.map((property) => <option value={property.id} key={property.id}>{property.name}</option>)}</select></label>
+      <label><span>Alojamiento</span><select aria-label="Tipo de alojamiento" value={selection.accommodation} disabled={!scope.property} onChange={(event) => setSelection({ ...selection, accommodation: event.target.value })}><option value="all">Todo el inventario</option>{accommodations.filter((item) => !item.toLowerCase().startsWith("todo")).map((item) => <option value={item} key={item}>{item}</option>)}</select></label>
+    </div>
+    <div className="portfolio-stats"><span><b>{portfolioStats.properties}</b> establecimientos</span><span><b>{portfolioStats.hotels}</b> hoteles</span><span><b>{portfolioStats.apartments}</b> apartamentos</span><span><b>{portfolioStats.campings}</b> campings</span></div>
+  </section>;
 }
 
 interface CalendarViewProps {
