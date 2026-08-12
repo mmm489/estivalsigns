@@ -1,4 +1,7 @@
 import { PrismaClient } from "@prisma/client";
+import { NagerDateSource } from "../lib/sources/nager.ts";
+import { saveHolidays, saveSchoolBreaks } from "../lib/persistence.ts";
+import { defaultUkHalfTerms } from "../lib/sources/openholidays.ts";
 
 const prisma = new PrismaClient();
 
@@ -25,6 +28,23 @@ async function main() {
     { id: "santa-tecla", name: "Santa Tecla", startDate: new Date(`${year}-09-15`), endDate: new Date(`${year}-09-24`), category: "FESTIVAL" as const, impact: 4, notes: "Ventana orientativa", source: "Manual · por confirmar" },
   ];
   for (const event of events) await prisma.manualEvent.upsert({ where: { id: event.id }, update: event, create: { ...event, confirmed: false } });
+
+  const nager = await new NagerDateSource().fetch({ start: "2026-01-01", end: "2027-12-31" });
+  await saveHolidays(nager);
+
+  type FrenchRecord = { record: { id: string; fields: { description: string; start_date: string; end_date: string; zones: string; annee_scolaire: string } } };
+  const response = await fetch('https://data.education.gouv.fr/api/explore/v2.0/catalog/datasets/fr-en-calendrier-scolaire/records?limit=100&where=annee_scolaire%3D%222026-2027%22');
+  if (!response.ok) throw new Error(`Calendario escolar francés: HTTP ${response.status}`);
+  const body = await response.json() as { records: FrenchRecord[] };
+  const seen = new Set<string>();
+  const french = body.records.flatMap(({ record }) => {
+    const fields = record.fields; const key = `${fields.description}:${fields.start_date}:${fields.end_date}:${fields.zones}`;
+    if (!/^Zone [ABC]$/.test(fields.zones) || seen.has(key)) return [];
+    seen.add(key);
+    return [{ id: `data-gouv-fr:${key}`, countryCode: "FR", zone: fields.zones, name: fields.description, startDate: fields.start_date.slice(0, 10), endDate: fields.end_date.slice(0, 10), confirmed: true, source: "data.gouv.fr" as const }];
+  });
+  const uk = [2026, 2027].flatMap(defaultUkHalfTerms);
+  await saveSchoolBreaks({ source: "openholidays", fetchedAt: new Date().toISOString(), stale: false, records: [...french, ...uk] });
 }
 
 main().finally(() => prisma.$disconnect());

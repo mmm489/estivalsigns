@@ -66,8 +66,9 @@ El modelo está en `prisma/schema.prisma`; la migración inicial está en
 - seis hoteles de comp set;
 - eventos locales recurrentes marcados como no confirmados.
 
-Para cargar festivos y vacaciones 2026–2027 en la base, ejecuta el refresco
-después del seed o llama a `/api/sources/refresh` con el secreto de cron. Los
+El seed carga festivos 2026–2027 mediante Nager.Date, vacaciones francesas por
+zonas A/B/C desde el dataset oficial de data.gouv.fr y half-terms UK manuales
+marcados como no confirmados. Después, los crons mantienen los datos al día. Los
 adaptadores nunca son invocados desde el navegador.
 
 ## Despliegue en Vercel + Neon
