@@ -1,5 +1,5 @@
 import { CalendarApp } from "@/components/calendar-app";
-import { demoDataset } from "@/lib/demo-data";
+import { anonymizeCalendarDataset, demoDataset } from "@/lib/demo-data";
 import { addDays, iso } from "@/lib/date-utils";
 import { loadCalendarDataset, loadScoreWeights } from "@/lib/persistence";
 import { defaultWeights } from "@/lib/score";
@@ -21,5 +21,5 @@ export default async function Home() {
       console.error("No se pudo leer el caché PostgreSQL; se muestra la demo", error);
     }
   }
-  return <CalendarApp initialData={data} initialWeights={weights} demoMode={demoMode} />;
+  return <CalendarApp initialData={anonymizeCalendarDataset(data)} initialWeights={weights} demoMode={demoMode} />;
 }

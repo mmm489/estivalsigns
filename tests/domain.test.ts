@@ -4,7 +4,7 @@ import { detectBridges, mapNagerHoliday } from "../lib/sources/nager.ts";
 import { calculateDemandDay, defaultWeights, median } from "../lib/score.ts";
 import { parseCompSetCsv } from "../lib/csv.ts";
 import { validateAggregatedPmsHeaders } from "../lib/sources/ulyses.ts";
-import { datasetForScope, estivalPortfolio, portfolioStats, resolvePortfolioScope, weightsForScope } from "../lib/portfolio.ts";
+import { datasetForScope, demoPortfolio, portfolioStats, resolvePortfolioScope, weightsForScope } from "../lib/portfolio.ts";
 
 test("Nager maps selected Spanish subdivisions", () => {
   const rows = mapNagerHoliday({ date: "2026-09-11", localName: "Diada", name: "Catalonia Day", countryCode: "ES", global: false, counties: ["ES-CT", "ES-AN"] });
@@ -30,21 +30,21 @@ test("comp set CSV validates required fields", () => {
 
 test("future PMS parser rejects possible PII headers", () => assert.throws(() => validateAggregatedPmsHeaders(["fecha_estancia", "email_huesped", "habitaciones_vendidas"]), /rechazado/i));
 
-test("Estival portfolio keeps the complete 18-property hierarchy", () => {
-  assert.equal(estivalPortfolio.length, 5);
+test("demo portfolio keeps the complete 18-property hierarchy", () => {
+  assert.equal(demoPortfolio.length, 5);
   assert.deepEqual(portfolioStats, { areas: 5, properties: 18, hotels: 14, apartments: 2, campings: 2 });
-  const resort = estivalPortfolio[0].clusters.find((cluster) => cluster.id === "estival-park-resort");
+  const resort = demoPortfolio[0].clusters.find((cluster) => cluster.id === "resort-costa-central");
   assert.equal(resort?.properties.length, 5);
 });
 
 test("portfolio scope resolves area, cluster, property and accommodation", () => {
-  const scope = resolvePortfolioScope({ areaId: "andorra", clusterId: "pas-de-la-casa", propertyId: "sporting", accommodation: "all" });
-  assert.equal(scope.title, "Hotel Sporting");
+  const scope = resolvePortfolioScope({ areaId: "montana", clusterId: "resort-montana", propertyId: "hotel-montana-01", accommodation: "all" });
+  assert.equal(scope.title, "Hotel Montaña 01");
   assert.equal(scope.seasonality, "mountain");
-  assert.match(scope.path, /Andorra · Pas de la Casa · Hotel Sporting/);
+  assert.match(scope.path, /Destino Montaña · Resort de Montaña · Hotel Montaña 01/);
 });
 
-test("non-local scopes never reuse La Pineda events, weather or comp set", () => {
+test("non-local scopes never reuse another destination's events, weather or comp set", () => {
   const scoped = datasetForScope({ holidays: [], schoolBreaks: [], events: [{ id: "local", name: "Local", startDate: "2026-01-01", endDate: "2026-01-01", category: "otro", impact: 1, confirmed: true, source: "manual" }], weather: [{ date: "2026-01-01", temperatureMax: 20, precipitationChance: 0, weatherCode: 0 }], compRates: [], competitorHotels: ["Hotel local"], activeMarkets: ["ES"] }, "market-only");
   assert.equal(scoped.events.length, 0);
   assert.equal(scoped.weather.length, 0);

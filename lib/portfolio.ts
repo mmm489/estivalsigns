@@ -2,7 +2,7 @@ import type { CalendarDataset, ScoreWeights } from "@/lib/types";
 
 export type PropertyType = "hotel" | "apartments" | "camping";
 export type SeasonalityProfile = "coast" | "mountain" | "urban" | "mixed";
-export type SignalProfile = "la-pineda" | "market-only";
+export type SignalProfile = "local-demo" | "market-only";
 
 export interface PortfolioProperty {
   id: string;
@@ -36,81 +36,85 @@ const hotel = (
   accommodations = ["Todas las habitaciones"],
 ): PortfolioProperty => ({ id, name, type: "hotel", location, seasonality, signalProfile, accommodations });
 
-export const estivalPortfolio: PortfolioArea[] = [
+/**
+ * Cartera ficticia para presentaciones y demostraciones.
+ * Conserva la variedad del producto sin identificar ninguna cadena real.
+ */
+export const demoPortfolio: PortfolioArea[] = [
   {
-    id: "costa-daurada",
-    name: "Costa Daurada",
+    id: "litoral-mediterraneo",
+    name: "Litoral Mediterráneo",
     clusters: [
       {
-        id: "estival-park-resort",
-        name: "Estival Park Resort",
-        location: "La Pineda · Vila-seca · Tarragona",
+        id: "resort-costa-central",
+        name: "Resort Costa Central",
+        location: "Destino costero principal",
         properties: [
-          hotel("silmar", "Estival Park Silmar", "La Pineda", "coast", "la-pineda", ["Todas las habitaciones", "Classic", "Dúplex Classic", "Suite Classic"]),
-          hotel("almaris", "Estival Park Almaris", "La Pineda", "coast", "la-pineda", ["Todas las habitaciones", "Superior", "Dúplex Superior", "Junior Suite", "Suite Superior"]),
-          hotel("marena", "Estival Park Marena", "La Pineda", "coast", "la-pineda", ["Todas las habitaciones", "Estándar", "Dúplex Estándar"]),
-          { id: "park-apartments", name: "Estival Park Apartments", type: "apartments", location: "La Pineda", seasonality: "coast", signalProfile: "la-pineda", accommodations: ["Todos los apartamentos"] },
-          hotel("oassium", "Oassium Hotel at Estival Park", "La Pineda", "coast", "la-pineda", ["Todas las habitaciones", "Habitación Club"]),
+          hotel("hotel-costa-01", "Hotel Costa 01", "Destino costero principal", "coast", "local-demo", ["Todas las habitaciones", "Classic", "Dúplex Classic", "Suite Classic"]),
+          hotel("hotel-costa-02", "Hotel Costa 02", "Destino costero principal", "coast", "local-demo", ["Todas las habitaciones", "Superior", "Dúplex Superior", "Junior Suite", "Suite Superior"]),
+          hotel("hotel-costa-03", "Hotel Costa 03", "Destino costero principal", "coast", "local-demo", ["Todas las habitaciones", "Estándar", "Dúplex Estándar"]),
+          { id: "apartamentos-costa-01", name: "Apartamentos Costa 01", type: "apartments", location: "Destino costero principal", seasonality: "coast", signalProfile: "local-demo", accommodations: ["Todos los apartamentos"] },
+          hotel("hotel-wellness-01", "Hotel Wellness 01", "Destino costero principal", "coast", "local-demo", ["Todas las habitaciones", "Habitación Club"]),
         ],
       },
       {
-        id: "cambrils",
-        name: "Cambrils",
-        location: "Cambrils · Tarragona",
+        id: "destino-costa-norte",
+        name: "Destino Costa Norte",
+        location: "Litoral mediterráneo norte",
         properties: [
-          hotel("centurion", "Estival Centurión", "Cambrils"),
-          hotel("eldorado", "Estival ElDorado", "Cambrils", "coast", "market-only", ["Todo el inventario", "Habitaciones", "Villas"]),
+          hotel("hotel-costa-04", "Hotel Costa 04", "Litoral mediterráneo norte"),
+          hotel("villas-costa-01", "Villas Costa 01", "Litoral mediterráneo norte", "coast", "market-only", ["Todo el inventario", "Habitaciones", "Villas"]),
         ],
       },
       {
-        id: "comarruga",
-        name: "Coma-ruga",
-        location: "Coma-ruga · El Vendrell · Tarragona",
+        id: "destino-costa-centro",
+        name: "Destino Costa Centro",
+        location: "Litoral mediterráneo central",
         properties: [
-          hotel("maramar", "Estival Maramar", "Coma-ruga"),
-          { id: "vendrell-platja", name: "Estival Vendrell Platja", type: "camping", location: "Coma-ruga", seasonality: "coast", signalProfile: "market-only", accommodations: ["Todo el inventario", "Bungalows y glamping", "Parcelas"] },
+          hotel("hotel-costa-05", "Hotel Costa 05", "Litoral mediterráneo central"),
+          { id: "camping-costa-01", name: "Camping Costa 01", type: "camping", location: "Litoral mediterráneo central", seasonality: "coast", signalProfile: "market-only", accommodations: ["Todo el inventario", "Bungalows y glamping", "Parcelas"] },
         ],
       },
       {
-        id: "punta-de-la-mora",
-        name: "Punta de la Mora",
-        location: "Tarragona · Costa Daurada",
+        id: "destino-natural",
+        name: "Destino Natural",
+        location: "Entorno litoral protegido",
         properties: [
-          { id: "torre-de-la-mora", name: "Estival Torre de la Mora", type: "camping", location: "Punta de la Mora", seasonality: "coast", signalProfile: "market-only", accommodations: ["Todo el inventario", "Bungalows y glamping", "Parcelas"] },
+          { id: "camping-natural-01", name: "Camping Natural 01", type: "camping", location: "Entorno litoral protegido", seasonality: "coast", signalProfile: "market-only", accommodations: ["Todo el inventario", "Bungalows y glamping", "Parcelas"] },
         ],
       },
     ],
   },
   {
-    id: "costa-del-sol",
-    name: "Costa del Sol",
-    clusters: [{ id: "benalmadena", name: "Benalmádena", location: "Benalmádena · Málaga", properties: [hotel("torrequebrada", "Estival Torrequebrada", "Benalmádena")] }],
+    id: "litoral-sur",
+    name: "Litoral Sur",
+    clusters: [{ id: "destino-sur", name: "Destino Sur", location: "Costa sur", properties: [hotel("hotel-sur-01", "Hotel Sur 01", "Costa sur")] }],
   },
   {
-    id: "costa-de-la-luz",
-    name: "Costa de la Luz",
+    id: "litoral-atlantico",
+    name: "Litoral Atlántico",
     clusters: [
-      { id: "islantilla", name: "Islantilla", location: "Islantilla · Huelva", properties: [hotel("islantilla-hotel", "Estival Islantilla", "Islantilla")] },
-      { id: "isla-cristina", name: "Isla Cristina", location: "Isla Cristina · Huelva", properties: [hotel("isla-cristina-hotel", "Estival Isla Cristina", "Isla Cristina")] },
+      { id: "destino-atlantico-norte", name: "Atlántico Norte", location: "Costa atlántica norte", properties: [hotel("hotel-atlantico-01", "Hotel Atlántico 01", "Costa atlántica norte")] },
+      { id: "destino-atlantico-sur", name: "Atlántico Sur", location: "Costa atlántica sur", properties: [hotel("hotel-atlantico-02", "Hotel Atlántico 02", "Costa atlántica sur")] },
     ],
   },
   {
-    id: "barcelona",
-    name: "Barcelona",
-    clusters: [{ id: "barcelona-ciudad", name: "Barcelona ciudad", location: "Barcelona", properties: [hotel("vilamari", "Hotel Vilamarí", "Barcelona", "urban")] }],
+    id: "urbano",
+    name: "Destino Urbano",
+    clusters: [{ id: "ciudad-principal", name: "Ciudad Principal", location: "Mercado urbano", properties: [hotel("hotel-urbano-01", "Hotel Urbano 01", "Mercado urbano", "urban")] }],
   },
   {
-    id: "andorra",
-    name: "Andorra",
+    id: "montana",
+    name: "Destino Montaña",
     clusters: [{
-      id: "pas-de-la-casa",
-      name: "Pas de la Casa",
-      location: "Pas de la Casa · Andorra",
+      id: "resort-montana",
+      name: "Resort de Montaña",
+      location: "Destino de nieve",
       properties: [
-        hotel("sporting", "Hotel Sporting", "Pas de la Casa", "mountain"),
-        hotel("cristina", "Hotel Cristina", "Pas de la Casa", "mountain"),
-        hotel("caribou", "Hotel Caribou", "Pas de la Casa", "mountain"),
-        { id: "caribou-apartments", name: "Caribou Apartments", type: "apartments", location: "Pas de la Casa", seasonality: "mountain", signalProfile: "market-only", accommodations: ["Todos los apartamentos"] },
+        hotel("hotel-montana-01", "Hotel Montaña 01", "Destino de nieve", "mountain"),
+        hotel("hotel-montana-02", "Hotel Montaña 02", "Destino de nieve", "mountain"),
+        hotel("hotel-montana-03", "Hotel Montaña 03", "Destino de nieve", "mountain"),
+        { id: "apartamentos-montana-01", name: "Apartamentos Montaña 01", type: "apartments", location: "Destino de nieve", seasonality: "mountain", signalProfile: "market-only", accommodations: ["Todos los apartamentos"] },
       ],
     }],
   },
@@ -135,12 +139,12 @@ export interface ResolvedPortfolioScope {
   accommodation: string;
 }
 
-const propertyList = () => estivalPortfolio.flatMap((area) => area.clusters.flatMap((cluster) => cluster.properties));
+const propertyList = () => demoPortfolio.flatMap((area) => area.clusters.flatMap((cluster) => cluster.properties));
 
 export const portfolioStats = (() => {
   const properties = propertyList();
   return {
-    areas: estivalPortfolio.length,
+    areas: demoPortfolio.length,
     properties: properties.length,
     hotels: properties.filter((property) => property.type === "hotel").length,
     apartments: properties.filter((property) => property.type === "apartments").length,
@@ -149,11 +153,11 @@ export const portfolioStats = (() => {
 })();
 
 export function resolvePortfolioScope(selection: PortfolioSelection): ResolvedPortfolioScope {
-  const area = estivalPortfolio.find((item) => item.id === selection.areaId);
+  const area = demoPortfolio.find((item) => item.id === selection.areaId);
   const cluster = area?.clusters.find((item) => item.id === selection.clusterId);
   const property = cluster?.properties.find((item) => item.id === selection.propertyId);
-  const title = property?.name ?? cluster?.name ?? area?.name ?? "Estival Group";
-  const location = property?.location ?? cluster?.location ?? area?.name ?? "España · Andorra";
+  const title = property?.name ?? cluster?.name ?? area?.name ?? "Cartera hotelera";
+  const location = property?.location ?? cluster?.location ?? area?.name ?? "Mercados nacionales e internacionales";
   const path = [area?.name, cluster?.name, property?.name, selection.accommodation !== "all" ? selection.accommodation : undefined].filter(Boolean).join(" · ") || "Toda la cartera";
   const clusterProfiles = new Set(cluster?.properties.map((item) => item.signalProfile));
   const clusterSeasonality = new Set(cluster?.properties.map((item) => item.seasonality));
@@ -171,7 +175,7 @@ export function resolvePortfolioScope(selection: PortfolioSelection): ResolvedPo
 }
 
 export function datasetForScope(data: CalendarDataset, signalProfile: SignalProfile): CalendarDataset {
-  if (signalProfile === "la-pineda") return data;
+  if (signalProfile === "local-demo") return data;
   return { ...data, events: [], weather: [], compRates: [], competitorHotels: [] };
 }
 

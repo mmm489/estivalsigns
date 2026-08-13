@@ -7,10 +7,10 @@ const body = Manrope({ variable: "--font-body", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-  title: "Estival Signals · Calendario de demanda externa",
-  description: "Señales públicas y externas para anticipar la demanda en La Pineda.",
-  openGraph: { title: "Estival Signals", description: "Calendario de demanda externa", images: ["/og.png"] },
-  twitter: { card: "summary_large_image", title: "Estival Signals", description: "Calendario de demanda externa", images: ["/og.png"] },
+  title: "Revenue Signals · Calendario de demanda externa",
+  description: "Demostración anonimizada para anticipar la demanda hotelera con señales públicas y externas.",
+  openGraph: { title: "Revenue Signals", description: "Calendario de demanda externa · demo anonimizada", images: ["/og.png"] },
+  twitter: { card: "summary_large_image", title: "Revenue Signals", description: "Calendario de demanda externa · demo anonimizada", images: ["/og.png"] },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -5,8 +5,8 @@ export class OpenMeteoSource implements DataSourceAdapter<WeatherSignal> {
 
   async fetch(): Promise<SourceResult<WeatherSignal>> {
     const url = new URL("https://api.open-meteo.com/v1/forecast");
-    url.searchParams.set("latitude", "41.076");
-    url.searchParams.set("longitude", "1.183");
+    url.searchParams.set("latitude", process.env.PILOT_LATITUDE ?? "40.4168");
+    url.searchParams.set("longitude", process.env.PILOT_LONGITUDE ?? "-3.7038");
     url.searchParams.set("daily", "temperature_2m_max,precipitation_probability_max,weather_code");
     url.searchParams.set("timezone", "Europe/Madrid");
     url.searchParams.set("forecast_days", "14");
