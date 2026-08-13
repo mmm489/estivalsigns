@@ -10,7 +10,7 @@ const weights = [
   ["holiday", "Festivo emisor", 8],
   ["bridge", "Puente probable", 5],
   ["highImpactEvent", "Evento impacto 4–5", 14],
-  ["themeParkSpecial", "PortAventura especial", 12],
+  ["themeParkSpecial", "Parque temático especial", 12],
   ["weekend", "Fin de semana", 8],
 ] as const;
 
@@ -21,16 +21,16 @@ async function main() {
   await Promise.all(weights.map(([key, label, value]) => prisma.scoreWeight.upsert({ where: { key }, update: { label, value }, create: { key, label, value } })));
   await Promise.all(seasonal.map((value, index) => prisma.seasonalWeight.upsert({ where: { month: index + 1 }, update: { value }, create: { month: index + 1, value } })));
   await Promise.all(markets.map(([code, label, weight]) => prisma.emitterMarket.upsert({ where: { code }, update: { label, weight }, create: { code, label, weight } })));
-  for (const name of ["Golden Costa Salou", "H10 Salauris Palace", "Ohtels Vila Romana", "Blaumar Hotel", "Magnolia Hotel", "Best Negresco"]) await prisma.competitorHotel.upsert({ where: { name }, update: {}, create: { name } });
+  for (const name of ["Competidor A", "Competidor B", "Competidor C", "Competidor D", "Competidor E", "Competidor F"]) await prisma.competitorHotel.upsert({ where: { name }, update: {}, create: { name } });
   const year = new Date().getFullYear();
   const events = [
-    { id: "sant-joan", name: "Sant Joan", startDate: new Date(`${year}-06-23`), endDate: new Date(`${year}-06-24`), category: "FESTIVAL" as const, impact: 4, notes: "Fechas recurrentes; confirmar programa local", source: "Manual · por confirmar" },
-    { id: "santa-tecla", name: "Santa Tecla", startDate: new Date(`${year}-09-15`), endDate: new Date(`${year}-09-24`), category: "FESTIVAL" as const, impact: 4, notes: "Ventana orientativa", source: "Manual · por confirmar" },
+    { id: "festival-verano", name: "Festival de verano", startDate: new Date(`${year}-06-23`), endDate: new Date(`${year}-06-24`), category: "FESTIVAL" as const, impact: 4, notes: "Dato ficticio para demostración", source: "Presentación · por confirmar" },
+    { id: "festival-regional", name: "Festival regional", startDate: new Date(`${year}-09-15`), endDate: new Date(`${year}-09-24`), category: "FESTIVAL" as const, impact: 4, notes: "Dato ficticio para demostración", source: "Presentación · por confirmar" },
   ];
   for (const event of events) await prisma.manualEvent.upsert({ where: { id: event.id }, update: event, create: { ...event, confirmed: false } });
   await saveThemeParkEvents({ source: "manual", fetchedAt: new Date().toISOString(), stale: false, records: [
-    { id: `portaventura-halloween-${year}`, name: "Halloween en PortAventura", startDate: `${year}-10-01`, endDate: `${year}-10-31`, category: "parque", impact: 4, confirmed: false, source: "Calendario recurrente · confirmar" },
-    { id: `portaventura-navidad-${year}`, name: "Navidad en PortAventura", startDate: `${year}-12-05`, endDate: `${year}-12-31`, category: "parque", impact: 4, confirmed: false, source: "Calendario recurrente · confirmar" },
+    { id: `parque-otono-${year}`, name: "Temporada de otoño del parque", startDate: `${year}-10-01`, endDate: `${year}-10-31`, category: "parque", impact: 4, confirmed: false, source: "Dato ficticio · presentación" },
+    { id: `parque-invierno-${year}`, name: "Temporada de invierno del parque", startDate: `${year}-12-05`, endDate: `${year}-12-31`, category: "parque", impact: 4, confirmed: false, source: "Dato ficticio · presentación" },
   ] });
 
   const nager = await new NagerDateSource().fetch({ start: "2026-01-01", end: "2027-12-31" });

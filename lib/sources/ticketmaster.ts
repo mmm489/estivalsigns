@@ -9,8 +9,10 @@ export class TicketmasterSource implements DataSourceAdapter<EventSignal> {
     if (!this.apiKey) return { source: this.id, fetchedAt: new Date().toISOString(), records: [], stale: true, warning: "TICKETMASTER_API_KEY no configurada" };
     const url = new URL("https://app.ticketmaster.com/discovery/v2/events.json");
     url.searchParams.set("apikey", this.apiKey);
-    url.searchParams.set("latlong", "41.076,1.183");
-    url.searchParams.set("radius", "50");
+    const latitude = process.env.PILOT_LATITUDE ?? "40.4168";
+    const longitude = process.env.PILOT_LONGITUDE ?? "-3.7038";
+    url.searchParams.set("latlong", `${latitude},${longitude}`);
+    url.searchParams.set("radius", process.env.PILOT_RADIUS_KM ?? "50");
     url.searchParams.set("unit", "km");
     url.searchParams.set("startDateTime", `${range.start}T00:00:00Z`);
     url.searchParams.set("endDateTime", `${range.end}T23:59:59Z`);

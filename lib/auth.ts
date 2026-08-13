@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-const COOKIE = "estival_access";
+const COOKIE = "revenue_signals_access";
 const secret = () => process.env.ACCESS_COOKIE_SECRET ?? "development-only-secret";
 export const accessCookieName = COOKIE;
 

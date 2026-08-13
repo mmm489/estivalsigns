@@ -10,7 +10,7 @@ const dateAt = (month: number, day: number, targetYear = year) => `${targetYear}
 export const demoHolidays: HolidaySignal[] = [
   { id: "es-assumption", date: dateAt(8, 15), countryCode: "ES", localName: "Asunción de la Virgen", name: "Assumption", isNational: true, isBridge: false, sourceUrl: "https://date.nager.at" },
   { id: "fr-assumption", date: dateAt(8, 15), countryCode: "FR", localName: "Assomption", name: "Assumption", isNational: true, isBridge: false, sourceUrl: "https://date.nager.at" },
-  { id: "cat-national", date: dateAt(9, 11), countryCode: "ES", subdivisionCode: "ES-CT", localName: "Diada Nacional de Catalunya", name: "National Day of Catalonia", isNational: false, isBridge: false, sourceUrl: "https://date.nager.at" },
+  { id: "regional-holiday", date: dateAt(9, 11), countryCode: "ES", subdivisionCode: "ES-CT", localName: "Festivo autonómico", name: "Regional Holiday", isNational: false, isBridge: false, sourceUrl: "https://date.nager.at" },
   { id: "es-hispanic", date: dateAt(10, 12), countryCode: "ES", localName: "Fiesta Nacional de España", name: "National Day", isNational: true, isBridge: false, sourceUrl: "https://date.nager.at" },
   { id: "fr-all-saints", date: dateAt(11, 1), countryCode: "FR", localName: "Toussaint", name: "All Saints", isNational: true, isBridge: false, sourceUrl: "https://date.nager.at" },
 ];
@@ -26,10 +26,10 @@ export const demoSchoolBreaks: SchoolBreakSignal[] = [
 ];
 
 export const demoEvents: EventSignal[] = [
-  { id: "santa-tecla", name: "Santa Tecla", startDate: dateAt(9, 15), endDate: dateAt(9, 24), category: "festival", impact: 4, city: "Tarragona", confirmed: false, source: "Fecha orientativa · confirmar" },
-  { id: "castells", name: "Concurs de Castells", startDate: dateAt(10, 3), endDate: dateAt(10, 4), category: "festival", impact: 5, city: "Tarragona", venue: "Tarraco Arena", confirmed: false, source: "Recurrente bienal · confirmar" },
-  { id: "halloween", name: "Halloween en PortAventura", startDate: dateAt(10, 1), endDate: dateAt(10, 31), category: "parque", impact: 4, city: "Vila-seca", confirmed: false, source: "Temporada recurrente · confirmar calendario" },
-  { id: "congress", name: "Congreso tecnológico mediterráneo", startDate: addDays(current, 18), endDate: addDays(current, 20), category: "congreso", impact: 4, city: "Vila-seca", venue: "PortAventura Convention Centre", confirmed: false, source: "Ejemplo manual · sustituir" },
+  { id: "festival-regional", name: "Festival regional", startDate: dateAt(9, 15), endDate: dateAt(9, 24), category: "festival", impact: 4, city: "Ciudad costera", confirmed: false, source: "Dato ficticio · presentación" },
+  { id: "evento-deportivo", name: "Evento deportivo nacional", startDate: dateAt(10, 3), endDate: dateAt(10, 4), category: "deporte", impact: 5, city: "Ciudad costera", venue: "Recinto de eventos", confirmed: false, source: "Dato ficticio · presentación" },
+  { id: "temporada-parque", name: "Temporada especial del parque", startDate: dateAt(10, 1), endDate: dateAt(10, 31), category: "parque", impact: 4, city: "Destino costero", confirmed: false, source: "Dato ficticio · presentación" },
+  { id: "congress", name: "Congreso tecnológico", startDate: addDays(current, 18), endDate: addDays(current, 20), category: "congreso", impact: 4, city: "Destino costero", venue: "Centro de convenciones", confirmed: false, source: "Dato ficticio · presentación" },
 ];
 
 export const demoWeather: WeatherSignal[] = Array.from({ length: 14 }, (_, index) => ({
@@ -39,7 +39,7 @@ export const demoWeather: WeatherSignal[] = Array.from({ length: 14 }, (_, index
   weatherCode: [0, 1, 2, 61][index % 4],
 }));
 
-const compHotels = ["Golden Costa", "H10 Salauris", "Ohtels Vila Romana", "Blaumar", "Magnolia", "Best Negresco"];
+const compHotels = ["Competidor A", "Competidor B", "Competidor C", "Competidor D", "Competidor E", "Competidor F"];
 export const demoCompRates: CompRate[] = Array.from({ length: 16 }, (_, dayIndex) => addDays(current, dayIndex * 4)).flatMap((stayDate, dateIndex) =>
   compHotels.map((hotel, hotelIndex) => ({
     id: `${hotel}-${stayDate}`,
@@ -59,3 +59,37 @@ export const sourceStatuses = [
 ];
 
 export const demoDataset: CalendarDataset = { holidays: demoHolidays, schoolBreaks: demoSchoolBreaks, events: demoEvents, weather: demoWeather, compRates: demoCompRates, competitorHotels: compHotels, activeMarkets: ["FR", "ES", "GB", "IE", "DE", "NL", "BE"] };
+
+/** Masks any names that may arrive from a previously populated database. */
+export function anonymizeCalendarDataset(data: CalendarDataset): CalendarDataset {
+  const eventCounts = new Map<string, number>();
+  const eventNames: Record<EventSignal["category"], string> = {
+    festival: "Festival regional",
+    deporte: "Evento deportivo",
+    congreso: "Congreso profesional",
+    parque: "Evento de parque temático",
+    otro: "Evento externo",
+  };
+  const competitorNames = [...new Set([
+    ...(data.competitorHotels ?? []),
+    ...data.compRates.map((rate) => rate.hotel),
+  ])].sort().map((name, index) => [name, `Competidor ${String.fromCharCode(65 + index)}`] as const);
+  const competitorMap = new Map(competitorNames);
+
+  return {
+    ...data,
+    events: data.events.map((event) => {
+      const count = (eventCounts.get(event.category) ?? 0) + 1;
+      eventCounts.set(event.category, count);
+      return {
+        ...event,
+        name: `${eventNames[event.category]} ${String(count).padStart(2, "0")}`,
+        city: event.city ? "Destino piloto" : undefined,
+        venue: event.venue ? "Recinto local" : undefined,
+        source: "Fuente externa anonimizada",
+      };
+    }),
+    compRates: data.compRates.map((rate) => ({ ...rate, hotel: competitorMap.get(rate.hotel) ?? "Competidor" })),
+    competitorHotels: (data.competitorHotels ?? []).map((name) => competitorMap.get(name) ?? "Competidor"),
+  };
+}

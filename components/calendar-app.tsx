@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { addDays, formatDate, iso, monthGrid } from "@/lib/date-utils";
 import { sourceStatuses } from "@/lib/demo-data";
-import { datasetForScope, estivalPortfolio, portfolioStats, resolvePortfolioScope, weightsForScope, type PortfolioSelection, type ResolvedPortfolioScope } from "@/lib/portfolio";
+import { datasetForScope, demoPortfolio, portfolioStats, resolvePortfolioScope, weightsForScope, type PortfolioSelection, type ResolvedPortfolioScope } from "@/lib/portfolio";
 import { calculateDemandDay, demandColor, defaultWeights } from "@/lib/score";
 import type { CalendarDataset, DayDemand, EventSignal, ScoreWeights } from "@/lib/types";
 
@@ -42,7 +42,7 @@ export function CalendarApp({ initialData, initialWeights = defaultWeights, demo
   return (
     <main className="app">
       <header className="topbar">
-        <div className="brand"><div className="brand-mark">E</div><div><strong>Estival Signals</strong><span>Cartera corporativa · {portfolioStats.properties} establecimientos</span></div></div>
+        <div className="brand"><div className="brand-mark">R</div><div><strong>Revenue Signals</strong><span>Demostración corporativa · {portfolioStats.properties} establecimientos ficticios</span></div></div>
         <nav className="nav-tabs" aria-label="Vistas principales">
           {(["calendario", "agenda", "comparador", "configuracion"] as View[]).map((item) => <button className={`nav-tab ${view === item ? "active" : ""}`} onClick={() => setView(item)} key={item}>{item === "configuracion" ? "Configuración" : item[0].toUpperCase() + item.slice(1)}</button>)}
         </nav>
@@ -52,8 +52,8 @@ export function CalendarApp({ initialData, initialWeights = defaultWeights, demo
       <div className="workspace">
         <PortfolioSelector selection={portfolioSelection} setSelection={setPortfolioSelection} scope={scope} />
         <section className="hero">
-          <div><p className="eyebrow">{scope.path}</p><h1>{scope.title}<br />señales de demanda.</h1><p className="hero-copy">Festivos, vacaciones escolares y señales externas reunidos en una temperatura explicable para {scope.location}.{scope.signalProfile === "la-pineda" && " Incluye eventos, PortAventura, meteorología y comp set de La Pineda."}</p></div>
-          <div className="hero-note"><strong>Solo datos públicos y externos.</strong><br />Sin ocupación, ADR, reservas, PMS ni información de huéspedes.{scope.signalProfile !== "la-pineda" && <><br /><strong>Contexto preparado:</strong> faltan fuentes locales y comp set propios; nunca se reutilizan los de La Pineda.</>}{demoMode && <><br /><strong>Modo demo:</strong> configura Neon y ejecuta el refresco para usar caché real.</>}</div>
+          <div><p className="eyebrow">{scope.path}</p><h1>{scope.title}<br />señales de demanda.</h1><p className="hero-copy">Festivos, vacaciones escolares y señales externas reunidos en una temperatura explicable para {scope.location}.{scope.signalProfile === "local-demo" && " Incluye eventos, parque temático, meteorología y comp set del destino piloto."}</p></div>
+          <div className="hero-note"><strong>Entorno de demostración anonimizado.</strong><br />Los nombres de la cadena, establecimientos y destinos son ficticios. Sin ocupación, ADR, reservas, PMS ni información de huéspedes.{scope.signalProfile !== "local-demo" && <><br /><strong>Contexto preparado:</strong> faltan fuentes locales y comp set propios; nunca se reutilizan los de otro destino.</>}{demoMode && <><br /><strong>Modo demo:</strong> utiliza datos de ejemplo y señales públicas.</>}</div>
         </section>
 
         {view === "calendario" && <CalendarView {...{ year, month, days, selected, setSelected, moveMonth, filters, setFilters, selectedDay }} />}
@@ -74,7 +74,7 @@ function PortfolioSelector({ selection, setSelection, scope }: { selection: Port
   return <section className="portfolio-bar" aria-label="Ámbito de la cartera">
     <div className="portfolio-heading"><span className="panel-kicker">Ámbito activo</span><strong>{scope.title}</strong><small>{scope.property ? typeLabels[scope.property.type] : scope.cluster ? "Complejo o localidad" : scope.area ? "Zona" : "Vista corporativa"} · {scope.location}</small></div>
     <div className="portfolio-selectors">
-      <label><span>Zona</span><select aria-label="Zona o destino" value={selection.areaId} onChange={(event) => setSelection({ areaId: event.target.value, clusterId: "", propertyId: "", accommodation: "all" })}><option value="">Todo Estival Group</option>{estivalPortfolio.map((area) => <option value={area.id} key={area.id}>{area.name}</option>)}</select></label>
+      <label><span>Zona</span><select aria-label="Zona o destino" value={selection.areaId} onChange={(event) => setSelection({ areaId: event.target.value, clusterId: "", propertyId: "", accommodation: "all" })}><option value="">Toda la cartera</option>{demoPortfolio.map((area) => <option value={area.id} key={area.id}>{area.name}</option>)}</select></label>
       <label><span>Complejo / localidad</span><select aria-label="Complejo o localidad" value={selection.clusterId} disabled={!scope.area} onChange={(event) => setSelection({ ...selection, clusterId: event.target.value, propertyId: "", accommodation: "all" })}><option value="">Toda la zona</option>{clusters.map((cluster) => <option value={cluster.id} key={cluster.id}>{cluster.name}</option>)}</select></label>
       <label><span>Establecimiento</span><select aria-label="Establecimiento" value={selection.propertyId} disabled={!scope.cluster} onChange={(event) => setSelection({ ...selection, propertyId: event.target.value, accommodation: "all" })}><option value="">Todos los establecimientos</option>{properties.map((property) => <option value={property.id} key={property.id}>{property.name}</option>)}</select></label>
       <label><span>Alojamiento</span><select aria-label="Tipo de alojamiento" value={selection.accommodation} disabled={!scope.property} onChange={(event) => setSelection({ ...selection, accommodation: event.target.value })}><option value="all">Todo el inventario</option>{accommodations.filter((item) => !item.toLowerCase().startsWith("todo")).map((item) => <option value={item} key={item}>{item}</option>)}</select></label>
@@ -158,7 +158,7 @@ function CompareView({ weights, data }: { weights: ScoreWeights; data: CalendarD
 function SettingsView({ weights, setWeights, events, setEvents, competitorHotels: initialHotels, activeMarkets: initialMarkets, notify }: { weights: ScoreWeights; setWeights: (value: ScoreWeights) => void; events: EventSignal[]; setEvents: (value: EventSignal[]) => void; competitorHotels: string[]; activeMarkets: string[]; notify: (message: string) => void }) {
   const [competitorHotels, setCompetitorHotels] = useState(initialHotels);
   const [activeMarkets, setActiveMarkets] = useState(new Set(initialMarkets));
-  const weightFields: Array<[keyof Omit<ScoreWeights, "seasons">, string]> = [["frenchZone","Vacaciones FR · cada zona"],["holiday","Festivo mercado emisor"],["bridge","Puente probable"],["highImpactEvent","Evento impacto 4–5"],["themeParkSpecial","PortAventura especial"],["weekend","Fin de semana"]];
+  const weightFields: Array<[keyof Omit<ScoreWeights, "seasons">, string]> = [["frenchZone","Vacaciones FR · cada zona"],["holiday","Festivo mercado emisor"],["bridge","Puente probable"],["highImpactEvent","Evento impacto 4–5"],["themeParkSpecial","Parque temático especial"],["weekend","Fin de semana"]];
   const addEvent = async (form: FormData) => { const name = String(form.get("name") || ""); const startDate = String(form.get("startDate") || ""); if (!name || !startDate) return; const event = { id: crypto.randomUUID(), name, startDate, endDate: String(form.get("endDate") || startDate), category: String(form.get("category")) as EventSignal["category"], impact: Number(form.get("impact")) as EventSignal["impact"], confirmed: form.get("confirmed") === "on", source: "Entrada manual" }; const response = await fetch("/api/manual-events", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(event) }); setEvents([...events, event]); notify(response.ok ? "Evento guardado y añadido al calendario" : "Evento añadido a esta sesión · configura Neon para persistirlo"); };
   const saveWeights = async () => { const response = await fetch("/api/settings/weights", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(weights) }); notify(response.ok ? "Pesos guardados" : "Pesos aplicados a esta sesión · configura Neon para persistirlos"); };
   const deleteEvent = async (id: string) => { const response = await fetch(`/api/manual-events?id=${encodeURIComponent(id)}`, { method: "DELETE" }); if (response.ok) setEvents(events.filter((event) => event.id !== id)); notify(response.ok ? "Evento eliminado" : "No se pudo eliminar · comprueba Neon"); };
